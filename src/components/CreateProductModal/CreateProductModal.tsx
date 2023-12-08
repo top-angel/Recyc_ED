@@ -1,49 +1,53 @@
-import { Dialog, Transition, RadioGroup, Listbox } from "@headlessui/react";
-
-import { AiFillPlusSquare, AiOutlineClose } from "react-icons/ai";
-import { useRouter } from "next/router";
+import { Dialog, Transition, Listbox } from "@headlessui/react";
 import React, { useEffect, useState, Fragment } from "react";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+
+import { AiOutlineClose } from "react-icons/ai";
+import { useRouter } from "next/router";
+import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import ImageUploader from "./ImageUploader";
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpDownIcon,
-} from "@heroicons/react/20/solid";
+import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
 
+import { useAppDispatch } from "../../redux/hooks";
+import { userActions } from "../../redux/user/userSlice";
+import { useAppSelector } from "src/redux/hooks";
+import { useAuthContext } from "src/context/AuthProvider";
+
 interface FormValues {
-  productName: string;
-  materialType: string;
-  selectSize: string;
-  materialSize: number | "";
-  customMaterial: string;
-  customMaterialSize: number | "";
+  name: string;
+  material_type: string;
+  material_size: string;
+  example_image: any;
+  // materialSize: number | "";
+  // customMaterial: string;
+  // customMaterialSize: number | "";
 }
 
 const validationSchema = Yup.object().shape({
-  productName: Yup.string().required("Product Name Required"),
-  materialType: Yup.string().required("Material Type Required"),
-  customMaterial: Yup.string().required("Custom Material Required"),
-  selectSize: Yup.string().required("Material Size Selection Required"),
-  materialSize: Yup.number()
-    .typeError("Please enter a valid number")
-    .required("Number is required"),
-  customMaterialSize: Yup.number()
-    .typeError("Please enter a valid number")
-    .required("Number is required"),
+  name: Yup.string().required("Product Name Required"),
+  material_type: Yup.string().required("Material Type Required"),
+  material_size: Yup.string().required("Material Size Required"),
+  example_image: Yup.mixed().required("File is required"),
+  // customMaterial: Yup.string().required("Custom Material Required"),
+  // selectSize: Yup.string().required("Material Size Selection Required"),
+  // materialSize: Yup.number()
+  //   .typeError("Please enter a valid number")
+  //   .required("Number is required"),
+  // customMaterialSize: Yup.number()
+  //   .typeError("Please enter a valid number")
+  //   .required("Number is required"),
 });
 
-const material = [
-  { name: "other" },
+const materialType = [
+  // { name: "other" },
   { name: "paper" },
   { name: "plastic" },
   { name: "wood" },
 ];
 
-const people = [
-  { name: "other" },
+const materialSize = [
+  // { name: "other" },
   { name: "12" },
   { name: "16" },
   { name: "24" },
@@ -51,18 +55,47 @@ const people = [
 
 export default function CreateProductModal() {
   let [isOpen, setIsOpen] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState(material[0]);
-  const [customMaterial, setCustomMaterial] = useState("");
-  const [selectedOption, setSelectedOption] = useState(people[0]);
-  const [customMaterialSize, setCustomMaterialSize] = useState("");
+  const [type, setType] = useState(materialType[0]);
+  const [size, setSize] = useState(materialSize[0]);
+
+  const { isDataLoading, newProduct } = useAppSelector((s) => ({
+    isDataLoading: s.user.isDataLoading,
+    newProduct: s.user.newProduct,
+  }));
+
+  const dispatch = useAppDispatch();
+  const { accessToken } = useAuthContext();
+  // const [customMaterial, setCustomMaterial] = useState("");
+  // const [customMaterialSize, setCustomMaterialSize] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (newProduct !== "") {
+      closeModal();
+    }
+  }, [newProduct]);
 
   function closeModal() {
     setIsOpen(false);
+    setType(materialType[0]);
+    setSize(materialSize[0]);
   }
 
   function openModal() {
     setIsOpen(true);
+    // dispatch(userActions.setNewProduct(""));
+  }
+
+  function onSubmit(values) {
+    dispatch(
+      userActions.createProduct({
+        name: values.name,
+        material_type: values.material_type,
+        material_size: values.material_size,
+        example_image: values.example_image,
+        token: accessToken,
+      })
+    );
   }
 
   return (
@@ -71,7 +104,7 @@ export default function CreateProductModal() {
         <button
           type="button"
           onClick={openModal}
-          className="flex items-center gap-2 rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-md border-primary text-primary hover:bg-opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
         >
           <Image
             src={`/assets/images/productmodalicon.svg`}
@@ -98,7 +131,7 @@ export default function CreateProductModal() {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <div className="flex items-center justify-center min-h-full p-4 text-center">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
@@ -108,261 +141,290 @@ export default function CreateProductModal() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle  transition-all">
+                <Dialog.Panel className="w-full max-w-lg p-6 overflow-hidden text-left align-middle transition-all transform bg-white rounded-2xl">
                   <Dialog.Title
                     as="h3"
                     className="flex justify-between text-lg font-medium leading-6 text-textDarkBlue"
                   >
                     Create a Product
                     <AiOutlineClose
-                      className="h-5 w-5 cursor-pointer hover:opacity-80"
+                      className="w-5 h-5 cursor-pointer hover:opacity-80"
                       onClick={closeModal}
                     />
                   </Dialog.Title>
                   <Formik
                     initialValues={{
-                      productName: "",
-                      materialType: "",
-                      selectSize: "",
-                      materialSize: "",
-                      customMaterial: "",
-                      customMaterialSize: "",
+                      name: "",
+                      material_type: materialType[0].name,
+                      material_size: materialSize[0].name,
+                      example_image: null,
+                      // selectSize: "",
+                      // materialSize: "",
+                      // customMaterial: "",
+                      // customMaterialSize: "",
                     }}
                     validationSchema={validationSchema}
-                    onSubmit={(values: FormValues) => {}}
+                    onSubmit={(values: FormValues) => {
+                      onSubmit(values);
+                    }}
                   >
-                    {({ values, touched, isValid, setFieldValue, errors }) => (
-                      <Form>
-                        <div className="w-full">
-                          <div className="mt-5">
-                            <div className="font-primary text-sm font-semibold text-graystrongest">
-                              Product Name
-                            </div>
-                            <div className="font-primary text-sm font-normal text-graystrongest opacity-50">
-                              Enter the name of your product (e.g 330ml coke
-                              bottles)
-                            </div>
-                            <Field
-                              type="text"
-                              name="missionTitle"
-                              placeholder="Example Product Name"
-                              className="mb-1 mt-2 w-full rounded-xl border border-bordergray bg-white px-3 py-2 text-base font-normal text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
-                            />
-                          </div>
-                          <div className="mt-5">
-                            <div className="font-primary text-sm font-semibold text-graystrongest">
-                              Material Type
-                            </div>
-                            <div className="mb-2 font-primary text-sm font-normal text-graystrongest opacity-50">
-                              Select your products material
-                            </div>
-                            <Listbox
-                              value={selectedMaterial}
-                              onChange={(newValue) => {
-                                if (newValue.name === "other") {
-                                  setSelectedMaterial(newValue);
-                                } else {
-                                  setSelectedMaterial(newValue);
-                                  setCustomMaterial("");
-                                }
-                              }}
-                            >
-                              <div className="relative mt-1 w-full">
-                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left ring-1 ring-gray  ">
-                                  <span className="block truncate text-base text-darkgray">
-                                    {selectedMaterial.name}
-                                  </span>
-                                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                                    <ChevronDownIcon
-                                      className="text-gray-400 h-5 w-5"
-                                      aria-hidden="true"
-                                    />
-                                  </span>
-                                </Listbox.Button>
-                                <Transition
-                                  as={Fragment}
-                                  leave="transition ease-in duration-100"
-                                  leaveFrom="opacity-100"
-                                  leaveTo="opacity-0"
-                                >
-                                  <Listbox.Options
-                                    style={{
-                                      position: "relative",
-                                      zIndex: 1,
-                                    }}
-                                    className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                                  >
-                                    {material.map((material, materialIdx) => (
-                                      <Listbox.Option
-                                        key={materialIdx}
-                                        className={({ active }) =>
-                                          `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                            active
-                                              ? "bg-primary bg-opacity-10 text-primary"
-                                              : "text-gray-900"
-                                          }`
-                                        }
-                                        value={material}
-                                      >
-                                        {({ selected }) => (
-                                          <>
-                                            <span
-                                              className={`block truncate ${
-                                                selected
-                                                  ? "font-medium"
-                                                  : "font-normal"
-                                              }`}
-                                            >
-                                              {material.name}
-                                            </span>
-                                            {selected ? (
-                                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
-                                                <CheckIcon
-                                                  className="h-5 w-5"
-                                                  aria-hidden="true"
-                                                />
-                                              </span>
-                                            ) : null}
-                                          </>
-                                        )}
-                                      </Listbox.Option>
-                                    ))}
-                                  </Listbox.Options>
-                                </Transition>
+                    {({ values, touched, isValid, setFieldValue, errors }) => {
+                      return (
+                        <Form>
+                          <div className="w-full">
+                            <div className="mt-5">
+                              <div className="text-sm font-semibold font-primary text-graystrongest">
+                                Product Name
                               </div>
-                            </Listbox>
-                            <Field
+                              <div className="text-sm font-normal opacity-50 font-primary text-graystrongest">
+                                Enter the name of your product (e.g 330ml coke
+                                bottles)
+                              </div>
+                              <Field
+                                type="text"
+                                name="name"
+                                placeholder="Example Product Name"
+                                className="w-full px-3 py-2 mt-2 mb-1 text-base font-normal bg-white border rounded-xl border-bordergray text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
+                              />
+                              {errors.name && (
+                                <div className="text-sm text-rose-500">
+                                  {errors.name}
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-5">
+                              <div className="text-sm font-semibold font-primary text-graystrongest">
+                                Material Type
+                              </div>
+                              <div className="mb-2 text-sm font-normal opacity-50 font-primary text-graystrongest">
+                                Select your products material
+                              </div>
+                              <Listbox
+                                name="material_type"
+                                value={type}
+                                onChange={(newValue: any) => {
+                                  setFieldValue("material_type", newValue.name);
+                                  setType(newValue);
+                                  // if (newValue.name === "other") {
+                                  //   setSelectedMaterial(newValue);
+                                  // } else {
+
+                                  // }
+                                }}
+                              >
+                                <div className="relative w-full mt-1">
+                                  <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white rounded-lg cursor-default ring-1 ring-gray ">
+                                    <span className="block text-base truncate text-darkgray">
+                                      {type.name}
+                                    </span>
+                                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                      <ChevronDownIcon
+                                        className="w-5 h-5 text-gray-400"
+                                        aria-hidden="true"
+                                      />
+                                    </span>
+                                  </Listbox.Button>
+                                  <Transition
+                                    as={Fragment}
+                                    leave="transition ease-in duration-100"
+                                    leaveFrom="opacity-100"
+                                    leaveTo="opacity-0"
+                                  >
+                                    <Listbox.Options
+                                      style={{
+                                        position: "relative",
+                                        zIndex: 1,
+                                      }}
+                                      className="absolute z-50 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                                    >
+                                      {materialType.map(
+                                        (material, materialIdx) => (
+                                          <Listbox.Option
+                                            key={materialIdx}
+                                            className={({ active }) =>
+                                              `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                                active
+                                                  ? "bg-primary bg-opacity-10 text-primary"
+                                                  : "text-gray-900"
+                                              }`
+                                            }
+                                            value={material}
+                                          >
+                                            {({ selected }) => (
+                                              <>
+                                                <span
+                                                  className={`block truncate ${
+                                                    selected
+                                                      ? "font-medium"
+                                                      : "font-normal"
+                                                  }`}
+                                                >
+                                                  {material.name}
+                                                </span>
+                                                {selected ? (
+                                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
+                                                    <CheckIcon
+                                                      className="w-5 h-5"
+                                                      aria-hidden="true"
+                                                    />
+                                                  </span>
+                                                ) : null}
+                                              </>
+                                            )}
+                                          </Listbox.Option>
+                                        )
+                                      )}
+                                    </Listbox.Options>
+                                  </Transition>
+                                </div>
+                              </Listbox>
+                              {errors.material_type && (
+                                <div className="text-sm text-rose-500">
+                                  {errors.material_type}
+                                </div>
+                              )}
+                              {/* <Field
                               type="text"
                               name="customMaterial"
                               placeholder="Enter Custom Material"
-                              className="mb-1 mt-2 w-full rounded-xl border border-bordergray bg-white px-3 py-2 text-base font-normal text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
-                            />
-                          </div>
-                          <div className="mt-5">
-                            <div className="font-primary text-sm font-semibold text-graystrongest">
-                              Material Size
+                              className="w-full px-3 py-2 mt-2 mb-1 text-base font-normal bg-white border rounded-xl border-bordergray text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
+                            /> */}
                             </div>
-                            <div className="mb-2 font-primary text-sm font-normal text-graystrongest opacity-50">
-                              Enter the size of your product (e.g 400 ml)
-                            </div>
-                            <Field
+                            <div className="mt-5">
+                              <div className="text-sm font-semibold font-primary text-graystrongest">
+                                Material Size
+                              </div>
+                              <div className="mb-2 text-sm font-normal opacity-50 font-primary text-graystrongest">
+                                Enter the size of your product (e.g 400 ml)
+                              </div>
+                              {/* <Field
                               type="text"
                               name="missionTitle"
                               placeholder="10"
-                              className="mb-2 mt-0 w-full rounded-xl border border-bordergray bg-white px-3 py-2 text-base font-normal text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
-                            />
-                            <Listbox
-                              value={selectedOption}
-                              onChange={(newValue) => {
-                                if (newValue.name === "other") {
-                                  setSelectedOption(newValue);
-                                } else {
-                                  setSelectedOption(newValue);
-                                  setCustomMaterialSize("");
-                                }
-                              }}
-                            >
-                              <div className="relative mt-1 w-full">
-                                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left ring-1 ring-gray  ">
-                                  <span className="block truncate text-base text-darkgray">
-                                    {selectedOption.name}
-                                  </span>
-                                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                                    <ChevronDownIcon
-                                      className="text-gray-400 h-5 w-5"
-                                      aria-hidden="true"
-                                    />
-                                  </span>
-                                </Listbox.Button>
-                                <Transition
-                                  as={Fragment}
-                                  leave="transition ease-in duration-100"
-                                  leaveFrom="opacity-100"
-                                  leaveTo="opacity-0"
-                                >
-                                  <Listbox.Options
-                                    style={{
-                                      position: "relative",
-                                      zIndex: 1,
-                                    }}
-                                    className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                              className="w-full px-3 py-2 mt-0 mb-2 text-base font-normal bg-white border rounded-xl border-bordergray text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
+                            /> */}
+                              <Listbox
+                                name="material_size"
+                                value={size}
+                                onChange={(newValue) => {
+                                  setFieldValue("material_size", newValue.name);
+                                  setSize(newValue);
+                                  // if (newValue.name === "other") {
+                                  //   setSelectedOption(newValue);
+                                  // } else {
+                                  //   setSelectedOption(newValue);
+                                  //   setCustomMaterialSize("");
+                                  // }
+                                }}
+                              >
+                                <div className="relative w-full mt-1">
+                                  <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white rounded-lg cursor-default ring-1 ring-gray ">
+                                    <span className="block text-base truncate text-darkgray">
+                                      {size.name}
+                                    </span>
+                                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                      <ChevronDownIcon
+                                        className="w-5 h-5 text-gray-400"
+                                        aria-hidden="true"
+                                      />
+                                    </span>
+                                  </Listbox.Button>
+                                  <Transition
+                                    as={Fragment}
+                                    leave="transition ease-in duration-100"
+                                    leaveFrom="opacity-100"
+                                    leaveTo="opacity-0"
                                   >
-                                    {people.map((person, personIdx) => (
-                                      <Listbox.Option
-                                        key={personIdx}
-                                        className={({ active }) =>
-                                          `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                            active
-                                              ? "bg-primary bg-opacity-10 text-primary"
-                                              : "text-gray-900"
-                                          }`
-                                        }
-                                        value={person}
-                                      >
-                                        {({ selected }) => (
-                                          <>
-                                            <span
-                                              className={`block truncate ${
-                                                selected
-                                                  ? "font-medium"
-                                                  : "font-normal"
-                                              }`}
-                                            >
-                                              {person.name}
-                                            </span>
-                                            {selected ? (
-                                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
-                                                <CheckIcon
-                                                  className="h-5 w-5"
-                                                  aria-hidden="true"
-                                                />
+                                    <Listbox.Options
+                                      style={{
+                                        position: "relative",
+                                        zIndex: 1,
+                                      }}
+                                      className="absolute z-50 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                                    >
+                                      {materialSize.map((person, personIdx) => (
+                                        <Listbox.Option
+                                          key={personIdx}
+                                          className={({ active }) =>
+                                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                              active
+                                                ? "bg-primary bg-opacity-10 text-primary"
+                                                : "text-gray-900"
+                                            }`
+                                          }
+                                          value={person}
+                                        >
+                                          {({ selected }) => (
+                                            <>
+                                              <span
+                                                className={`block truncate ${
+                                                  selected
+                                                    ? "font-medium"
+                                                    : "font-normal"
+                                                }`}
+                                              >
+                                                {person.name}
                                               </span>
-                                            ) : null}
-                                          </>
-                                        )}
-                                      </Listbox.Option>
-                                    ))}
-                                  </Listbox.Options>
-                                </Transition>
-                              </div>
-                            </Listbox>
-                            <Field
+                                              {selected ? (
+                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
+                                                  <CheckIcon
+                                                    className="w-5 h-5"
+                                                    aria-hidden="true"
+                                                  />
+                                                </span>
+                                              ) : null}
+                                            </>
+                                          )}
+                                        </Listbox.Option>
+                                      ))}
+                                    </Listbox.Options>
+                                  </Transition>
+                                </div>
+                              </Listbox>
+                              {/* <Field
                               type="text"
                               name="customMaterialSize"
                               placeholder="Enter Custom Unit"
-                              className="mb-1 mt-2 w-full rounded-xl border border-bordergray bg-white px-3 py-2 text-base font-normal text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
-                            />
-                          </div>
-                          <div className="mt-5">
-                            <div className="font-primary text-sm font-semibold text-graystrongest">
-                              Example Image
+                              className="w-full px-3 py-2 mt-2 mb-1 text-base font-normal bg-white border rounded-xl border-bordergray text-darkgray focus:outline focus:outline-1 focus:outline-offset-0 focus:outline-primary"
+                            /> */}
                             </div>
-                            <div className="mb-2 font-primary text-sm font-normal text-graystrongest opacity-50">
-                              Upload an example image of the product to guide
-                              your collectors
+                            <div className="mt-5">
+                              <div className="text-sm font-semibold font-primary text-graystrongest">
+                                Example Image
+                              </div>
+                              <div className="mb-2 text-sm font-normal opacity-50 font-primary text-graystrongest">
+                                Upload an example image of the product to guide
+                                your collectors
+                              </div>
+                              <ImageUploader
+                                className="h-[126px]"
+                                onImageUpload={(imageFile: File) =>
+                                  setFieldValue("example_image", imageFile)
+                                }
+                              />
+                              {errors.example_image && (
+                                <div className="text-sm text-rose-500">
+                                  {errors.example_image.toString()}
+                                </div>
+                              )}
                             </div>
-                            <ImageUploader
-                              className="h-[126px]"
-                              onImageUpload={(imageFile: File) =>
-                                setFieldValue("missionImage", imageFile)
-                              }
-                            />
+                            <button
+                              type="submit"
+                              className="flex items-center justify-center w-full gap-2 px-4 py-2 mt-5 text-sm font-medium text-white rounded-md bg-primary disabled:hover:bg-opacity-80 hover:bg-opacity-80 disabled:bg-opacity-80"
+                              disabled={!isValid || isDataLoading}
+                            >
+                              <Image
+                                src={`/assets/images/productmodalothericon.svg`}
+                                alt="productmodalother"
+                                width="24"
+                                height="24"
+                              />
+                              Create a Product {isDataLoading && loadingSpinner}
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            className="mt-5 flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
-                          >
-                            <Image
-                              src={`/assets/images/productmodalothericon.svg`}
-                              alt="productmodalother"
-                              width="24"
-                              height="24"
-                            />
-                            Create a Product
-                          </button>
-                        </div>
-                      </Form>
-                    )}
+                        </Form>
+                      );
+                    }}
                   </Formik>
                 </Dialog.Panel>
               </Transition.Child>
@@ -373,3 +435,26 @@ export default function CreateProductModal() {
     </>
   );
 }
+
+const loadingSpinner = (
+  <svg
+    className="w-6 h-6 mr-3 -ml-1 text-white animate-spin"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="4"
+    ></circle>
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    ></path>
+  </svg>
+);

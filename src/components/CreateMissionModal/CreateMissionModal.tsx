@@ -1,9 +1,10 @@
 import { Dialog, Transition, RadioGroup, Listbox } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 
 import { AiFillPlusSquare, AiOutlineClose } from "react-icons/ai";
 import { useRouter } from "next/router";
+import Image from "next/image";
 
 const plans = [
   {
@@ -30,6 +31,7 @@ export default function CreateMissionModal() {
   let [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState(plans[0]);
   const [selectedOption, setSelectedOption] = useState(people[0]);
+  const [createMission, setCreateMission] = useState(false);
   const router = useRouter();
 
   function closeModal() {
@@ -42,19 +44,48 @@ export default function CreateMissionModal() {
 
   const createHandle = () => {
     router.push("/creators");
+    setCreateMission(true);
   };
+
+  const cancelHandle = () => {
+    router.push("/");
+  }
+  
+  useEffect(() => {
+    if (router.pathname === '/creators') {
+      setCreateMission(true);
+    } else {
+      setCreateMission(false);
+    }
+  }, [router.pathname]);
+
+ 
 
   return (
     <>
       <div className="flex items-center justify-center">
-        <button
-          type="button"
-          onClick={openModal}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
-        >
-          <AiFillPlusSquare className="h-5 w-5" />
-          Create a Mission
-        </button>
+        {createMission ? (
+          <div className="flex">
+             <button
+                type="button"
+                onClick={cancelHandle}
+                className="mr-44 flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+              >
+                <AiFillPlusSquare className="h-5 w-5" />
+                Cancel
+              </button>
+          </div>
+        ):(
+          <button
+            type="button"
+            onClick={openModal}
+            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+          >
+            <AiFillPlusSquare className="h-5 w-5" />
+            Create a Mission
+          </button>
+        )}
+       
       </div>
 
       <Transition appear show={isOpen} as={Fragment}>

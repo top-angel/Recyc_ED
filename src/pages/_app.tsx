@@ -7,6 +7,9 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import AuthContextProvider from "../context/AuthProvider";
 import { OrbisProvider } from "../context/chat/DirectMessages/DirectMessages";
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const MyApp = ({ Component, pageProps }: AppProps) => {
   return (
     <StoreProvider>
@@ -27,6 +30,7 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
         <AuthContextProvider>
           <OrbisProvider>
             <Component {...pageProps} />
+            <ToastContainer autoClose={2000} />
           </OrbisProvider>
         </AuthContextProvider>
       </PrivyProvider>

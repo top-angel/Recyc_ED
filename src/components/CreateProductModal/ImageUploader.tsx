@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, useRef } from "react";
+import React, { useState, ChangeEvent, useRef, useEffect } from "react";
 
 interface SelectedImage {
   file: File;
@@ -8,14 +8,19 @@ interface SelectedImage {
 type props = {
   className?: string;
   onImageUpload: (imageFile: File) => void;
+  batch?: any;
 };
 
 const ImageUploader = (props: props) => {
   const { className, onImageUpload } = props;
 
   const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(
-    null,
+    null
   );
+
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [props.batch]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -58,14 +63,14 @@ const ImageUploader = (props: props) => {
             alt="Uploaded"
             className={`w-full rounded-2xl py-2 ${className}`}
           />
-          <div className="absolute bottom-2 flex w-full justify-between px-2 font-primary text-xs font-normal text-darkgray">
+          <div className="absolute flex justify-between w-full px-2 text-xs font-normal bottom-2 font-primary text-darkgray">
             <button
               onClick={handleButtonClick}
-              className="rounded-lg bg-black bg-opacity-20 px-2 py-1 text-white"
+              className="px-2 py-1 text-white bg-black rounded-lg bg-opacity-20"
             >
               Reupload
             </button>
-            <div className="rounded-lg bg-black bg-opacity-20 px-2 py-1 text-white">
+            <div className="px-2 py-1 text-white bg-black rounded-lg bg-opacity-20">
               {selectedImage.file.name}
             </div>
           </div>
@@ -83,13 +88,13 @@ const ImageUploader = (props: props) => {
               height="40"
             />
           </button>
-          <div className="font-primary text-sm font-normal text-graymiddle">
+          <div className="text-sm font-normal font-primary text-graymiddle">
             <span className="cursor-pointer text-primary">
               Click to upload{" "}
             </span>
             or drag and drop
           </div>
-          <div className="font-primary text-sm font-normal text-graymiddle">
+          <div className="text-sm font-normal font-primary text-graymiddle">
             SVG, PNG, JPG or GIF (max. 800x800px)
           </div>
         </div>

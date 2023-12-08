@@ -1,13 +1,32 @@
 import React, { useState } from "react";
-import QRCode from "react-qr-code";
 
-const GenerateQRCode = () => {
-  const [value, setValue] = useState("");
+import { useAppDispatch } from "../../redux/hooks";
+import { userActions } from "../../redux/user/userSlice";
+import { useAppSelector } from "src/redux/hooks";
+import { useAuthContext } from "src/context/AuthProvider";
+
+type props = {
+  batch: any;
+};
+const GenerateQRCode = ({ batch }: props) => {
+  const dispatch = useAppDispatch();
+  const { accessToken } = useAuthContext();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
 
+  const { isDataLoading } = useAppSelector((s) => ({
+    isDataLoading: s.user.isDataLoading,
+  }));
+
   const onClickGenerate = () => {
-    setValue(`${name}${amount}`);
+    dispatch(
+      userActions.generateQRCode({
+        batch_name: name,
+        batch_size: amount,
+        product_id: batch._id,
+        token: accessToken,
+      })
+    );
   };
 
   return (
@@ -22,7 +41,7 @@ const GenerateQRCode = () => {
         Select a Product to Generate QR Codes
       </div>
       <div className="mt-5">
-        <label className="text-sm text-darkgray">Batch Name</label>
+        <label className="text-sm text-darkgray">Batch Name*</label>
         <input
           type="text"
           className="w-full px-2 py-1.5 mt-1 text-base border rounded-lg border-bordergray text-textDarkBlue focus:outline-none"
@@ -32,7 +51,7 @@ const GenerateQRCode = () => {
         />
       </div>
       <div className="mt-5">
-        <label className="text-sm text-darkgray">Amount of items</label>
+        <label className="text-sm text-darkgray">Amount of items*</label>
         <input
           type="number"
           className="w-full px-2 py-1.5 mt-1 text-base border rounded-lg border-bordergray text-textDarkBlue focus:outline-none"
@@ -42,14 +61,12 @@ const GenerateQRCode = () => {
         />
         <button
           type="button"
-          className="items-center w-full gap-2 px-4 py-2 mt-4 text-sm font-medium text-center text-white rounded-md bg-primary hover:bg-opacity-80 focus:outline-none"
+          className="items-center w-full gap-2 px-4 py-2 mt-4 text-sm font-medium text-center text-white rounded-md bg-primary hover:bg-opacity-80 focus:outline-none disabled:bg-opacity-80 hover:disabled:bg-opacity-80"
           onClick={onClickGenerate}
+          disabled={name === "" || amount === "" || !batch}
         >
-          Generate
+          {isDataLoading ? "waiting..." : "Generate"}
         </button>
-      </div>
-      <div className="flex justify-center mt-4">
-        {(name !== "" || value !== "") && <QRCode value={value} />}
       </div>
     </div>
   );

@@ -5,8 +5,6 @@ import { API_URI } from "src/api/auth";
 
 import { useAuthContext } from "src/context/AuthProvider";
 
-import ViewBatchModal from "./ViewBatchModal";
-
 type props = {
   data: any;
   onSelect: (item: any) => void;
@@ -16,10 +14,7 @@ type props = {
 const Batch = ({ data, onSelect, selected }: props) => {
   return (
     <div
-      className={`p-4 border rounded-lg shadow-sm  border-bordergray cursor-pointer data. ${
-        data._id === selected?._id && `border-primary bg-primary bg-opacity-10`
-      }`}
-      onClick={() => onSelect(data)}
+      className={`p-4 border rounded-lg shadow-sm  border-bordergray`}
     >
       <div className="flex items-center gap-4">
         <img
@@ -30,12 +25,14 @@ const Batch = ({ data, onSelect, selected }: props) => {
           {data?.material_size}L {data?.material_type} {data.name}
         </div>
       </div>
-      <div className="flex items-center justify-end gap-4 mt-4">
-        {/* <div className="inline-flex items-center px-2 py-1 rounded-lg bg-gray">
+      <div className="flex items-center gap-4 mt-4">
+        <div className="inline-flex items-center px-2 py-1 rounded-lg bg-gray">
           <MdOutlineQrCodeScanner className="w-5 h-5 text-blue-400" />
           <div className="text-sm text-blue-400">100</div>
-        </div> */}
-        <ViewBatchModal data={data} />
+        </div>
+        <button  onClick={() => onSelect(data)} className="w-full py-1 text-sm font-semibold text-center text-blue-400 border border-blue-300 rounded-lg font-primary cursor-pointer">
+          View Batches
+        </button>
       </div>
     </div>
   );

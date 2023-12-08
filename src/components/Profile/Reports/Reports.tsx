@@ -3,6 +3,10 @@ import Image from "next/image";
 import { Tab } from "@headlessui/react";
 import CreateReportModal from "./CreateReportModal";
 import FilterModal from "./FilterModal";
+import LoadingSpinner from "src/components/LoadSpinner/LoadSpinner";
+import { useAuthContext } from "src/context/AuthProvider";
+import { useAppDispatch, useAppSelector } from "src/redux/hooks";
+import { userActions } from "src/redux/user/userSlice";
 
 interface DataItem {
   id: number;
@@ -45,9 +49,16 @@ const dataItem = [
 ];
 
 const DownloadList = () => {
+  const { isDataLoading, getReportsData } = useAppSelector((s) => ({
+    isDataLoading: s.user.isDataLoading,
+
+    getReportsData: s.user.getReportsData,
+  }));
+
+
   const [selectAll, setSelectAll] = useState<boolean>(false);
 
-  const [data, setData] = useState<DataItem[]>(dataItem);
+  const [data, setData] = useState<any>(getReportsData);
 
   const updateReportsData = (newData) => {
     const nextId = Math.max(...data.map(item => item.id), 0) + 1;
@@ -141,6 +152,28 @@ const DownloadList = () => {
     setShowFiltershow(true)
   }
 
+  const { accessToken } = useAuthContext();
+  const dispatch = useAppDispatch();
+
+
+
+  useEffect(() => {
+    const actionData = {
+      mission_id : "mission:AmKFhpibmzpScMX",
+      start_date : "2023-10-15",
+      end_date : "2023-11-29",
+      sort_by : "asc",
+      token: accessToken,
+    };
+    dispatch(userActions.getReportsData(actionData));
+  },[]);
+
+  
+  if (isDataLoading) {
+    return <LoadingSpinner />;
+  }
+  
+
   return (
     <Tab.Panel className="px-6">
       <div className="mb-5 flex justify-between">
@@ -227,7 +260,7 @@ const DownloadList = () => {
         </thead>
         <tbody>
           {data && data.map((item) => (
-            <tr key={item.id}>
+            <tr key={item._id}>
               <td className="w-[40px] cursor-pointer border-t border-bordergray py-3 pl-5 text-left hover:opacity-90">
                 <input
                   type="checkbox"
@@ -244,10 +277,10 @@ const DownloadList = () => {
                   height="40"
                   style={{ marginRight: 15 }}
                 />
-                {item.title}
+                {item.filename}
               </td>
               <td className="cursor-pointer border-t border-bordergray px-5 py-3 text-left font-primary text-sm font-medium hover:opacity-90">
-                {item.billingDate}
+                {item.created_at}
               </td>
               <td className="cursor-pointer border-t border-bordergray px-5 py-3 text-left font-primary text-sm font-medium hover:opacity-90">
                 {item.status === "Ready" && (
@@ -268,7 +301,7 @@ const DownloadList = () => {
                 )}
               </td>
               <td className="cursor-pointer border-t border-bordergray px-5 py-3 text-left font-primary text-sm font-medium hover:opacity-90">
-                {item.size}
+                {item.filesize}MB
               </td>
               <td className="cursor-pointer border-t border-bordergray px-5 py-3 text-right font-primary text-sm font-medium hover:opacity-90">
                 <div

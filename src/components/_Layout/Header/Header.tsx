@@ -21,11 +21,11 @@ const Header = ({ logout }: props) => {
   }));
 
   return (
-    <div className="fixed mx-auto flex w-full items-center justify-between bg-white p-7 border-b border-bordergray z-50">
+    <div className="fixed flex items-center justify-between w-full mx-auto bg-white border-b p-7 border-bordergray z-1">
       <div className="flex items-center gap-8">
         <Link
           href="/profile"
-          className="flex items-center justify-center font-primary hover:border-0 gap-3"
+          className="flex items-center justify-center gap-3 font-primary hover:border-0"
         >
           <div className="h-9 w-9">
             <Image

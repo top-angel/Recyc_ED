@@ -4,7 +4,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 import { AiFillPlusSquare, AiOutlineClose } from "react-icons/ai";
-import React, { useEffect, useState, Fragment } from "react";
+import React, { useEffect, useState, Fragment, useMemo } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import {
@@ -13,6 +13,10 @@ import {
   ChevronUpDownIcon,
 } from "@heroicons/react/20/solid";
 import Image from "next/image";
+import { userActions } from "../../../redux/user/userSlice";
+import { useAuthContext } from "src/context/AuthProvider";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
+import LoadingSpinner from "src/components/LoadSpinner/LoadSpinner";
 
 
 interface DataItem {
@@ -125,6 +129,19 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
     });
   }, []);
 
+  const { accessToken } = useAuthContext();
+  const dispatch = useAppDispatch();
+
+  const { isDataLoading, reportId } = useAppSelector((s) => ({
+    isDataLoading: s.user.isDataLoading,
+
+    reportId: s.user.reportId,
+  }));
+
+  if (isDataLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
@@ -173,15 +190,31 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
                     }}
                     validationSchema={validationSchema}
                     onSubmit={(values: FormValues) => {
-                      const newReport = {
-                        selected: false,
-                        title: selectedMission.name === "Search" ? 'No title' : selectedMission.name,
-                        billingDate: formatDateToCustomString(values.startDate),
-                        status: "Ready",
-                        size: "10.2 Mb",
-                      };
-                      updateReportsData(newReport);
-                      closeModal();
+                      (async () => {
+                        const reportCreationData = {
+                          mission_id: "mission:AmKFhpibmzpScMX",
+                          product_id: "product_id",
+                          start_date: values.startDate.toString(),
+                          end_date: values.endDate.toString(),
+                          filetype: "pdf",
+                          token: accessToken,
+                        };
+                    
+                        try {
+                          await dispatch(userActions.reportCreation(reportCreationData));
+                          const newReport = {
+                            selected: false,
+                            title: selectedMission.name === "Search" ? 'No title' : selectedMission.name,
+                            billingDate: formatDateToCustomString(values.startDate),
+                            status: "Ready",
+                            size: "10.2 Mb",
+                          };
+                          updateReportsData(newReport);
+                          closeModal();
+                        } catch (error) {
+                          console.error("Error during report creation dispatch:", error);
+                        }
+                      })();
                     }}
                   >
                     {({ values, touched, isValid, setFieldValue, errors }) => (

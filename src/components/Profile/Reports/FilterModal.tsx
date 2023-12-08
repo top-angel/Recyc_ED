@@ -15,7 +15,6 @@ import {
 import Image from "next/image";
 
 
-
 interface DataItem {
   id: number;
   selected: boolean;
@@ -119,6 +118,7 @@ const FilterModal: React.FC<CreateReportModalProps> = ({
     });
   }, []);
 
+ 
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
